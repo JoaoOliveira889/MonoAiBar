@@ -1,0 +1,73 @@
+# ==========================================
+# Swift & Swift Package Manager (SPM)
+# ==========================================
+.build/
+Packages/
+Package.pins
+.swiftpm/
+
+# ==========================================
+# Xcode & Apple Build Products
+# ==========================================
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ==========================================
+# Application Bundles & Binaries
+# ==========================================
+*.app/
+MonoAiBar.app/
+MonoBar.app/
+*.zip
+
+# ==========================================
+# macOS System & Metadata Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# ==========================================
+# Environment, Credentials & Local Files
+# ==========================================
+.env
+.env.*
+*.pem
+*.key
+*.p8
+*.cer
+*.p12
+*credentials*.json
+*secret*
+*.token
+tokens/
+
+# ==========================================
+# Logs & Temporary Files
+# ==========================================
+*.log
+*.tmp
+*.swp
+*~
+
+# ==========================================
+# IDE & Code Editors
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

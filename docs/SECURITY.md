@@ -1,7 +1,7 @@
 # MonoAiBar — Security & Privacy
 
 This document describes how MonoAiBar handles credentials, what it puts on the network, and what
-it deliberately does not do. It reflects the v0.0.2 architecture.
+it deliberately does not do. It reflects the v0.0.3 architecture.
 
 ---
 

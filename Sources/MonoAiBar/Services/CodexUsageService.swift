@@ -39,7 +39,7 @@ actor CodexUsageService {
     }
 
     private static let usageURL = URL(string: "https://chatgpt.com/backend-api/wham/usage")!
-    private static let userAgent = "MonoAiBar/0.0.2"
+    private static let userAgent = "MonoAiBar/0.0.3"
 
     private let http = HTTPClient(timeout: 6.0, resourceTimeout: 8.0)
     private let decoder = JSONDecoder()

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JoaoOliveira889/MonoAiBar/releases"><img src="https://img.shields.io/badge/version-v0.0.2-blueviolet?style=for-the-badge" alt="Version 0.0.2"></a>
+  <a href="https://github.com/JoaoOliveira889/MonoAiBar/releases"><img src="https://img.shields.io/badge/version-v0.0.3-blueviolet?style=for-the-badge" alt="Version 0.0.3"></a>
   <a href="https://github.com/JoaoOliveira889/MonoAiBar"><img src="https://img.shields.io/badge/platform-macOS%2026.0%2B-blue?style=for-the-badge&logo=apple" alt="macOS 26.0+"></a>
   <a href="https://github.com/JoaoOliveira889/MonoAiBar"><img src="https://img.shields.io/badge/architecture-Apple%20Silicon%20(ARM64)-indigo?style=for-the-badge&logo=apple" alt="Apple Silicon ARM64 Only"></a>
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.0%2B-F05138?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 6.0+"></a>

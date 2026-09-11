@@ -38,7 +38,7 @@ actor ClaudeUsageService {
         "user:file_upload"
     ]
     private static let betaHeader = "oauth-2025-04-20"
-    private static let userAgent = "MonoAiBar/0.0.2"
+    private static let userAgent = "MonoAiBar/0.0.3"
 
     private let http = HTTPClient(timeout: 6.0, resourceTimeout: 8.0)
     private let decoder = JSONDecoder()

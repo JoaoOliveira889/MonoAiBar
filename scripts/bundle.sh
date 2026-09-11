@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="MonoAiBar"
-APP_VERSION="0.0.2"
+APP_VERSION="0.0.3"
 BUNDLE_ID="com.joaooliveira889.monoaibar"
 
 APP_DIR="${APP_NAME}.app"

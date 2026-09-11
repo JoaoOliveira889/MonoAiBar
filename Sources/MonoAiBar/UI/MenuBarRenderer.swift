@@ -9,21 +9,16 @@ final class MenuBarRenderer {
         static let columnGap: CGFloat = 7.0
         static let padding: CGFloat = 2.0
         static let minimumColumnWidth: CGFloat = 26.0
-        static let iconBoundingBox = CGSize(width: 12.0, height: 10.5)
+        static let iconBoundingBox = CGSize(width: 11.5, height: 9.5)
         static let alertDotDiameter: CGFloat = 3.0
     }
 
     // NSFont and an immutable NSParagraphStyle are read-only value-like objects, safe to touch
     // from the drawing handler that AppKit invokes while rasterising the image.
-    nonisolated(unsafe) private static let labelFont = NSFont.systemFont(ofSize: 8.0, weight: .bold)
-    nonisolated(unsafe) private static let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .semibold)
+    nonisolated(unsafe) private static let stackedLabelFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
+    nonisolated(unsafe) private static let stackedValueFont = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .semibold)
+    nonisolated(unsafe) private static let singleLineValueFont = NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .semibold)
     nonisolated(unsafe) private static let inlineLabelFont = NSFont.monospacedSystemFont(ofSize: 10.0, weight: .medium)
-
-    nonisolated(unsafe) private static let centered: NSParagraphStyle = {
-        let style = NSMutableParagraphStyle()
-        style.alignment = .center
-        return style
-    }()
 
     /// One provider's slot in the status item. The brand icon is boxed so the `@Sendable` drawing
     /// handler can carry it; the image is a template drawn only from AppKit's own rasterisation
@@ -81,15 +76,20 @@ final class MenuBarRenderer {
         zip(providers, zip(values, alerting)).map { provider, state in
             let (value, isAlerting) = state
             let label = provider.shortCode.uppercased()
-            let valueWidth = value.size(withAttributes: [.font: Self.valueFont]).width
 
             let contentWidth: CGFloat = switch mode {
             case .textAbove:
-                max(label.size(withAttributes: [.font: Self.labelFont]).width, valueWidth)
+                max(
+                    label.size(withAttributes: [.font: Self.stackedLabelFont]).width,
+                    value.size(withAttributes: [.font: Self.stackedValueFont]).width
+                )
             case .inlineText:
-                label.size(withAttributes: [.font: Self.inlineLabelFont]).width + 3.0 + valueWidth
+                label.size(withAttributes: [.font: Self.inlineLabelFont]).width + 4.0 + value.size(withAttributes: [.font: Self.singleLineValueFont]).width
             case .icons:
-                max(Metrics.iconBoundingBox.width, valueWidth)
+                max(
+                    Metrics.iconBoundingBox.width,
+                    value.size(withAttributes: [.font: Self.stackedValueFont]).width
+                )
             }
 
             let alertAllowance = isAlerting ? Metrics.alertDotDiameter + 2.0 : 0.0
@@ -108,13 +108,17 @@ final class MenuBarRenderer {
             Self.layOut(columns) { column, x in
                 Self.draw(
                     column.label,
-                    in: NSRect(x: x, y: 11.8, width: column.width, height: 9.0),
-                    font: Self.labelFont
+                    x: x,
+                    width: column.width,
+                    baseline: 12.5,
+                    font: Self.stackedLabelFont
                 )
                 Self.draw(
                     column.value,
-                    in: NSRect(x: x, y: 1.0, width: column.width, height: 11.0),
-                    font: Self.valueFont
+                    x: x,
+                    width: column.width,
+                    baseline: 2.0,
+                    font: Self.stackedValueFont
                 )
             }
         }
@@ -124,19 +128,26 @@ final class MenuBarRenderer {
         template(width: totalWidth(of: columns)) { _ in
             Self.layOut(columns) { column, x in
                 let labelWidth = column.label.size(withAttributes: [.font: Self.inlineLabelFont]).width
-                let valueWidth = column.value.size(withAttributes: [.font: Self.valueFont]).width
-                let contentWidth = labelWidth + 3.0 + valueWidth
+                let valueWidth = column.value.size(withAttributes: [.font: Self.singleLineValueFont]).width
+                let contentWidth = labelWidth + 4.0 + valueWidth
                 let leading = x + (column.width - contentWidth) / 2.0
+                let baseline: CGFloat = 6.2
 
                 Self.draw(
                     column.label,
-                    in: NSRect(x: leading, y: 5.8, width: labelWidth, height: 11.0),
-                    font: Self.inlineLabelFont
+                    x: leading,
+                    width: labelWidth,
+                    baseline: baseline,
+                    font: Self.inlineLabelFont,
+                    alignment: .left
                 )
                 Self.draw(
                     column.value,
-                    in: NSRect(x: leading + labelWidth + 3.0, y: 5.4, width: valueWidth, height: 11.0),
-                    font: Self.valueFont
+                    x: leading + labelWidth + 4.0,
+                    width: valueWidth,
+                    baseline: baseline,
+                    font: Self.singleLineValueFont,
+                    alignment: .left
                 )
             }
         }
@@ -155,14 +166,16 @@ final class MenuBarRenderer {
 
                 column.icon.draw(in: NSRect(
                     x: round((x + (column.width - iconWidth) / 2.0) * 2.0) / 2.0,
-                    y: round((10.8 + (Metrics.iconBoundingBox.height - iconHeight) / 2.0) * 2.0) / 2.0,
+                    y: round((11.5 + (Metrics.iconBoundingBox.height - iconHeight) / 2.0) * 2.0) / 2.0,
                     width: iconWidth,
                     height: iconHeight
                 ))
                 Self.draw(
                     column.value,
-                    in: NSRect(x: x, y: 0.6, width: column.width, height: 10.8),
-                    font: Self.valueFont
+                    x: x,
+                    width: column.width,
+                    baseline: 2.0,
+                    font: Self.stackedValueFont
                 )
             }
         }
@@ -201,11 +214,24 @@ final class MenuBarRenderer {
         return image
     }
 
-    nonisolated private static func draw(_ text: String, in rect: NSRect, font: NSFont) {
-        NSAttributedString(string: text, attributes: [
+    nonisolated private static func draw(
+        _ text: String,
+        x: CGFloat,
+        width: CGFloat,
+        baseline: CGFloat,
+        font: NSFont,
+        alignment: NSTextAlignment = .center
+    ) {
+        let style = NSMutableParagraphStyle()
+        style.alignment = alignment
+        let attr = NSAttributedString(string: text, attributes: [
             .font: font,
             .foregroundColor: NSColor.black,
-            .paragraphStyle: centered
-        ]).draw(with: rect, options: [.usesLineFragmentOrigin])
+            .paragraphStyle: style
+        ])
+        let lineHeight = ceil(font.ascender - font.descender)
+        let rectY = baseline + font.descender
+        let rect = NSRect(x: x, y: rectY, width: width, height: lineHeight)
+        attr.draw(with: rect, options: [.usesLineFragmentOrigin])
     }
 }

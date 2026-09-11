@@ -17,7 +17,7 @@ struct PopoverContentView: View {
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        return "v\(version ?? "0.0.2")"
+        return "v\(version ?? "0.0.3")"
     }
 
     var body: some View {

@@ -13,10 +13,11 @@ struct PopoverContentView: View {
 
     @State private var showingSettings = false
     @State private var selectedTab: TabSelection = .all
+    @Namespace private var tabNamespace
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        return "v\(version ?? "0.0.1")"
+        return "v\(version ?? "0.0.2")"
     }
 
     var body: some View {
@@ -27,7 +28,15 @@ struct PopoverContentView: View {
                 quotaPanel
             }
         }
-        .frame(width: Self.width)
+        .frame(width: Self.width, alignment: .top)
+        // Reports the height the content actually wants. The popover window is what animates to it,
+        // so a tab switch glides instead of snapping.
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            StatusItemController.shared.resizePopover(toContentHeight: height)
+        }
     }
 
     private var activeProviders: [ProviderType] {
@@ -62,6 +71,7 @@ struct PopoverContentView: View {
                         .padding(10)
                 }
             }
+            .transition(.opacity)
 
             Divider().opacity(0.3)
             footer
@@ -131,7 +141,7 @@ struct PopoverContentView: View {
         let isSelected = selectedTab == .all
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedTab = .all }
+            withAnimation(.snappy(duration: 0.22)) { selectedTab = .all }
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "square.grid.2x2")
@@ -141,14 +151,23 @@ struct PopoverContentView: View {
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 4.5)
-            .background(isSelected ? Color(nsColor: .controlBackgroundColor) : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(isSelected ? Color.primary.opacity(0.2) : .clear, lineWidth: 1)
+            .background {
+                if isSelected {
+                    selectionPill(stroke: Color.primary.opacity(0.2))
+                }
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private func selectionPill(stroke: Color) -> some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(Color(nsColor: .controlBackgroundColor))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(stroke, lineWidth: 1)
+            }
+            .matchedGeometryEffect(id: "tabSelection", in: tabNamespace)
     }
 
     private func providerTab(_ provider: ProviderType) -> some View {
@@ -156,13 +175,10 @@ struct PopoverContentView: View {
         let percent = quotaManager.status(for: provider).primaryUsagePercent
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedTab = .provider(provider) }
+            withAnimation(.snappy(duration: 0.22)) { selectedTab = .provider(provider) }
         } label: {
             HStack(spacing: 5) {
-                Image(nsImage: provider.brandIcon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 12, height: 12)
+                BrandIcon(provider: provider, size: 12, tinted: isSelected)
 
                 Text(provider.shortCode.uppercased())
                     .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .monospaced))
@@ -173,11 +189,10 @@ struct PopoverContentView: View {
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 4.5)
-            .background(isSelected ? Color(nsColor: .controlBackgroundColor) : .clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(isSelected ? provider.accentColor.opacity(0.5) : .clear, lineWidth: 1)
+            .background {
+                if isSelected {
+                    selectionPill(stroke: provider.accentColor.opacity(0.5))
+                }
             }
         }
         .buttonStyle(.plain)
@@ -205,7 +220,6 @@ struct PopoverContentView: View {
             Button("Quit") {
                 StatusItemController.shared.closePopover()
                 NSApplication.shared.terminate(nil)
-                exit(0)
             }
                 .buttonStyle(.plain)
                 .font(.system(size: 10, weight: .medium))

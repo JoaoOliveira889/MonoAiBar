@@ -60,10 +60,10 @@ actor AntigravityUsageService {
     private let decoder = JSONDecoder()
 
     private var lastWorkingPort: Int?
+    private var lastServerPID: pid_t?
 
     func fetchUsage() async -> ProviderStatus {
-        guard let server = ProcessInspector.findLanguageServer()
-            ?? ProcessInspector.firstProcess(matchingPathFragments: Self.executableFragments) else {
+        guard let server = locateServer() else {
             return offlineStatus(reason: "The Antigravity language server is not running.")
         }
 
@@ -83,6 +83,24 @@ actor AntigravityUsageService {
         }
 
         return offlineStatus(reason: "No Antigravity RPC port answered on 127.0.0.1.")
+    }
+
+    /// Walking every PID and reading its arguments costs a `sysctl` per process. The last known
+    /// PID is re-validated first, which is a single syscall on the common path.
+    private func locateServer() -> ProcessInspector.Match? {
+        if let pid = lastServerPID {
+            if let match = ProcessInspector.languageServerMatch(pid: pid)
+                ?? ProcessInspector.match(pid: pid, pathFragments: Self.executableFragments) {
+                return match
+            }
+            lastServerPID = nil
+            lastWorkingPort = nil
+        }
+
+        let found = ProcessInspector.findLanguageServer()
+            ?? ProcessInspector.firstProcess(matchingPathFragments: Self.executableFragments)
+        lastServerPID = found?.pid
+        return found
     }
 
     /// The language server opens hundreds of loopback sockets, so scanning them is hopeless.

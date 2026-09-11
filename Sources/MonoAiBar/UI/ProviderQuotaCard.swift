@@ -55,13 +55,16 @@ struct ProviderQuotaCard: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(status.provider.shortCode.uppercased())
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(status.provider.accentColor)
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            HStack(spacing: 4) {
+                BrandIcon(provider: status.provider, size: 12, tinted: false)
+                Text(status.provider.shortCode.uppercased())
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(status.provider.accentColor)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
@@ -113,9 +116,14 @@ struct ProviderQuotaCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             }
 
-            Text(status.state.statusBadgeTitle)
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(status.state.statusBadgeColor)
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(status.state.statusBadgeColor)
+                    .frame(width: 5, height: 5)
+                Text(status.state.statusBadgeTitle)
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(status.state.statusBadgeColor)
+            }
         }
     }
 

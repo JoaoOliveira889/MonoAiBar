@@ -75,13 +75,13 @@ public enum ProviderState: Equatable, Sendable {
 
     public var statusBadgeTitle: String {
         switch self {
-        case .idle: "● waiting"
-        case .loading: "● updating..."
-        case .healthy: "● ok"
-        case .warning: "● warning"
-        case .expired: "● expired"
-        case .error: "● error"
-        case .notFound: "● inactive"
+        case .idle: "waiting"
+        case .loading: "updating..."
+        case .healthy: "ok"
+        case .warning: "warning"
+        case .expired: "expired"
+        case .error: "error"
+        case .notFound: "inactive"
         }
     }
 

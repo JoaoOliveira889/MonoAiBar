@@ -31,6 +31,7 @@ struct MiniProgressBar: View {
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(Color.usageColor(for: percent))
                     .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.3), value: Int(percent))
 
             }
 

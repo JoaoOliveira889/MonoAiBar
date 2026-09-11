@@ -10,21 +10,35 @@ public enum MenuBarDisplayMode: String, CaseIterable, Identifiable, Sendable {
     public var id: String { rawValue }
 }
 
+/// Shared by `SettingsStore` and by the off-main-actor port memory, so a key never exists as two
+/// separate string literals.
+enum DefaultsKey {
+    static let refreshInterval = "monoaibar_refresh_interval"
+    static let displayMode = "monoaibar_display_mode"
+    static let enabledProviders = "monoaibar_enabled_providers"
+    static let notificationsEnabled = "monoaibar_notifications_enabled"
+    static let warningThreshold = "monoaibar_warning_threshold"
+    static let lastWorkingAntigravityPort = "monoaibar_last_antigravity_port"
+
+    /// Keys written by the app's former name, migrated once on first launch.
+    static var legacyPairs: [(legacy: String, current: String)] {
+        [
+            ("monobar_notifications_enabled", notificationsEnabled),
+            ("monobar_warning_threshold", warningThreshold),
+            ("monobar_refresh_interval", refreshInterval),
+            ("monobar_display_mode", displayMode),
+            ("monobar_enabled_providers", enabledProviders),
+            ("monobar_last_antigravity_port", lastWorkingAntigravityPort)
+        ]
+    }
+}
+
 @MainActor
 @Observable
 public final class SettingsStore {
     public static let shared = SettingsStore()
 
-    private enum Key {
-        static let refreshInterval = "monoaibar_refresh_interval"
-        static let displayMode = "monoaibar_display_mode"
-        static let enabledProviders = "monoaibar_enabled_providers"
-        static let notificationsEnabled = "monoaibar_notifications_enabled"
-        static let warningThreshold = "monoaibar_warning_threshold"
-        static let lastWorkingAntigravityPort = "monoaibar_last_antigravity_port"
-
-        static let legacyPrefix = "monobar_"
-    }
+    private typealias Key = DefaultsKey
 
     public let availableIntervals: [(label: String, seconds: TimeInterval)] = [
         ("1m", 60),
@@ -88,15 +102,7 @@ public final class SettingsStore {
         let defaults = UserDefaults.standard
 
         // Migrate legacy settings if new settings don't exist yet
-        let legacyMap: [(String, String)] = [
-            ("monobar_notifications_enabled", Key.notificationsEnabled),
-            ("monobar_warning_threshold", Key.warningThreshold),
-            ("monobar_refresh_interval", Key.refreshInterval),
-            ("monobar_display_mode", Key.displayMode),
-            ("monobar_enabled_providers", Key.enabledProviders),
-            ("monobar_last_antigravity_port", Key.lastWorkingAntigravityPort)
-        ]
-        for (oldKey, newKey) in legacyMap {
+        for (oldKey, newKey) in Key.legacyPairs {
             if defaults.object(forKey: newKey) == nil, let val = defaults.object(forKey: oldKey) {
                 defaults.set(val, forKey: newKey)
                 defaults.removeObject(forKey: oldKey)
@@ -137,15 +143,12 @@ public final class SettingsStore {
 /// Antigravity's language server picks a fresh port per launch. The last working one is worth
 /// remembering, and the services that need it run off the main actor.
 enum AntigravityPortMemory {
-    private static let key = "monoaibar_last_antigravity_port"
-    private static let legacyKey = "monobar_last_antigravity_port"
+    private static let key = DefaultsKey.lastWorkingAntigravityPort
 
     static var lastWorking: Int? {
         get {
             let stored = UserDefaults.standard.integer(forKey: key)
-            if stored > 0 { return stored }
-            let legacy = UserDefaults.standard.integer(forKey: legacyKey)
-            return legacy > 0 ? legacy : nil
+            return stored > 0 ? stored : nil
         }
         set {
             if let newValue, (1024...65535).contains(newValue) {

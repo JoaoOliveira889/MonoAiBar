@@ -2,7 +2,6 @@ import Foundation
 
 struct ClaudeCredential: Sendable {
     enum Origin: Sendable, Equatable {
-        case claudeCodeKeychain(service: String, account: String?)
         case monoAiBarKeychain
         case userSuppliedToken
         case file(URL)
@@ -48,13 +47,6 @@ struct ClaudeCredential: Sendable {
         guard let expiresAtMilliseconds else { return false }
         return expiresAtMilliseconds <= Int64(Date().timeIntervalSince1970 * 1000)
     }
-
-    var isWritable: Bool {
-        switch origin {
-        case .claudeCodeKeychain, .monoAiBarKeychain, .file: true
-        case .userSuppliedToken, .environment: false
-        }
-    }
 }
 
 actor CredentialStore {
@@ -81,25 +73,49 @@ actor CredentialStore {
     private init() {}
 
     private func saveToLocalFile(text: String) {
-        guard let url = Self.claudeCredentialsFile else { return }
-        let dir = url.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        guard let data = text.data(using: .utf8) else { return }
-        try? data.write(to: url, options: .atomic)
-        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path(percentEncoded: false))
+        guard let url = Self.claudeCredentialsFile, let data = text.data(using: .utf8) else { return }
+        let directory = url.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: directory.path(percentEncoded: false)
+        )
+        writeProtected(data, to: url)
+    }
+
+    /// Refuses to follow a symlink: an attacker who can create one inside the target directory
+    /// would otherwise redirect an OAuth payload to a path of their choosing.
+    private func writeProtected(_ data: Data, to url: URL) {
+        let path = url.path(percentEncoded: false)
+        let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+        if let type = attributes?[.type] as? FileAttributeType, type == .typeSymbolicLink {
+            Log.credentials.error("refusing to write credentials through a symlink at \(url.lastPathComponent, privacy: .public)")
+            return
+        }
+
+        do {
+            try data.write(to: url, options: [.atomic])
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
+        } catch {
+            Log.credentials.error("credential write failed for \(url.lastPathComponent, privacy: .public)")
+        }
     }
 
     private func claudeCredentialFromLocalFile() -> ClaudeCredential? {
         guard let url = Self.claudeCredentialsFile,
               let data = try? Data(contentsOf: url),
               let text = String(data: data, encoding: .utf8) else { return nil }
-        return parse(secret: text, sourceLabel: "MonoAiBar Cache", origin: .monoAiBarKeychain)
+        return parse(secret: text, sourceLabel: "MonoAiBar Cache", origin: .file(url))
     }
 
     // MARK: - Claude
 
     /// Returns the freshest Claude credential available, preferring a token the user typed in
-    /// Settings, then whichever stored payload expires latest. Never writes plaintext to disk.
+    /// Settings, then whichever stored payload expires latest.
     func claudeCredential() -> ClaudeCredential? {
         migrateLegacyStorageIfNeeded()
 
@@ -142,21 +158,25 @@ actor CredentialStore {
             clientId: previous.clientId
         )
 
-        // 1. Always save to MonoAiBar's own private store (file + keychain)
+        // 1. MonoAiBar's own private store, which never triggers a keychain prompt on read.
         saveToLocalFile(text: merged.text)
         Keychain.write(service: Service.claudeCache, account: Self.account, secret: merged.text)
 
-        // 2. Also keep ~/.claude/.credentials.json updated so CLI stays in sync
-        if case .file(let url) = previous.origin {
-            try? merged.data.write(to: url, options: .atomic)
-            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path(percentEncoded: false))
-        } else {
-            let home = FileManager.default.homeDirectoryForCurrentUser
-            let standardClaudeFile = home.appending(path: ".claude/.credentials.json")
-            if FileManager.default.fileExists(atPath: standardClaudeFile.path(percentEncoded: false)) {
-                try? merged.data.write(to: standardClaudeFile, options: .atomic)
-                try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: standardClaudeFile.path(percentEncoded: false))
-            }
+        // 2. Whichever CLI file the payload came from, plus the standard path, so the CLI and the
+        //    app keep sharing one rotating refresh token. Files that do not already exist are left
+        //    alone rather than created.
+        var targets: [URL] = []
+        if case .file(let url) = previous.origin, url != Self.claudeCredentialsFile {
+            targets.append(url)
+        }
+        let standardClaudeFile = FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: ".claude/.credentials.json")
+        if !targets.contains(standardClaudeFile) {
+            targets.append(standardClaudeFile)
+        }
+        for url in targets
+        where FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
+            writeProtected(merged.data, to: url)
         }
 
 
@@ -476,7 +496,6 @@ actor CredentialStore {
               let data = try? Data(contentsOf: legacyFile),
               let text = String(data: data, encoding: .utf8) else { return }
 
-        // Ensure restrictive 0600 permissions
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: legacyFile.path(percentEncoded: false))
 
         _ = Keychain.write(service: Service.claudeCache, account: Self.account, secret: text)

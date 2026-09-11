@@ -20,6 +20,8 @@ public final class QuotaManager {
     @ObservationIgnored
     private var previousPeakByWindow: [String: Double] = [:]
 
+    private static let staleAfter: TimeInterval = 20.0
+
     private init() {
         statuses = Dictionary(
             uniqueKeysWithValues: ProviderType.allCases.map { ($0, .initial(for: $0)) }
@@ -56,6 +58,13 @@ public final class QuotaManager {
         }
         if status.state.isError { return "!" }
         return status.state == .idle || status.state == .healthy ? "0%" : "--%"
+    }
+
+    /// Opening the panel should feel instant and should not fire a network round trip for data
+    /// that is seconds old.
+    public func refreshAllIfStale() async {
+        if let lastRefreshed, Date().timeIntervalSince(lastRefreshed) < Self.staleAfter { return }
+        await refreshAll()
     }
 
     public func refreshAll() async {

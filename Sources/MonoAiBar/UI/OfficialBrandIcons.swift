@@ -3,99 +3,112 @@ import AppKit
 /// Drawn with `NSImage(size:flipped:drawingHandler:)` rather than `lockFocus`, so each icon is
 /// re-rasterised at whatever backing scale the current display uses instead of being baked at the
 /// scale that happened to be active when the constant was first touched.
+///
+/// Every glyph is a template: the menu bar inverts it for light and dark, and SwiftUI tints it
+/// with the provider accent colour inside the panel.
 @MainActor
 enum OfficialBrandIcons {
-    static let claude = template(width: 15, height: 13) { context in
-        context.setFillColor(NSColor.black.cgColor)
+    /// Anthropic's Claude mark: a radial burst of round-tipped rays of alternating length.
+    static let claude = template(width: 14, height: 14) { context in
+        let center = CGPoint(x: 7.0, y: 7.0)
+        let rayCount = 12
+
         context.setStrokeColor(NSColor.black.cgColor)
-
-        // Body: balanced squircle with good vertical proportion
-        let body = CGRect(x: 2.5, y: 2.6, width: 10.0, height: 6.2)
-        context.addPath(CGPath(roundedRect: body, cornerWidth: 2.2, cornerHeight: 2.2, transform: nil))
-        context.fillPath()
-
-        // Claws
-        for claw in [
-            [(3.5, 7.0), (1.2, 8.5), (0.8, 11.8), (2.2, 9.8), (3.8, 12.2), (3.2, 8.8)],
-            [(11.5, 7.0), (13.8, 8.5), (14.2, 11.8), (12.8, 9.8), (11.2, 12.2), (11.8, 8.8)]
-        ] {
-            let path = CGMutablePath()
-            path.addLines(between: claw.map { CGPoint(x: $0.0, y: $0.1) })
-            path.closeSubpath()
-            context.addPath(path)
-            context.fillPath()
-        }
-
-        // Legs: 4 legs nicely spread
-        context.setLineWidth(1.3)
         context.setLineCap(.round)
-        for leg in [((4.0, 2.6), (3.0, 0.6)), ((6.0, 2.6), (5.5, 0.4)),
-                    ((9.0, 2.6), (9.5, 0.4)), ((11.0, 2.6), (12.0, 0.6))] {
-            context.move(to: CGPoint(x: leg.0.0, y: leg.0.1))
-            context.addLine(to: CGPoint(x: leg.1.0, y: leg.1.1))
+
+        for ray in 0..<rayCount {
+            let angle = (CGFloat(ray) / CGFloat(rayCount)) * 2.0 * .pi + .pi / 12.0
+            let isLong = ray.isMultiple(of: 2)
+
+            context.setLineWidth(isLong ? 1.15 : 1.0)
+            context.move(to: CGPoint(
+                x: center.x,
+                y: center.y
+            ))
+            context.addLine(to: CGPoint(
+                x: center.x + (isLong ? 6.4 : 5.3) * cos(angle),
+                y: center.y + (isLong ? 6.4 : 5.3) * sin(angle)
+            ))
             context.strokePath()
         }
-
-        // Eyes: clear cutouts
-        context.setBlendMode(.clear)
-        context.fill(CGRect(x: 4.5, y: 5.0, width: 2.0, height: 2.2))
-        context.fill(CGRect(x: 8.5, y: 5.0, width: 2.0, height: 2.2))
     }
 
-    static let antigravity = template(width: 13, height: 13) { context in
-        let center = CGPoint(x: 6.5, y: 6.5)
-        let radius = CGSize(width: 5.5, height: 5.5)
-        let control = CGSize(width: 1.0, height: 1.0)
-
+    /// Google Antigravity's mark: a tapered arch forming an "A", hollowed by a rounded valley.
+    static let antigravity = template(width: 14, height: 13) { context in
         let path = CGMutablePath()
-        path.move(to: CGPoint(x: center.x, y: center.y + radius.height))
-        path.addQuadCurve(
-            to: CGPoint(x: center.x + radius.width, y: center.y),
-            control: CGPoint(x: center.x + control.width, y: center.y + control.height)
+
+        // Outer arch, from the left foot over the apex and down to the right foot.
+        path.move(to: CGPoint(x: 1.5, y: 1.9))
+        path.addCurve(
+            to: CGPoint(x: 7.0, y: 12.1),
+            control1: CGPoint(x: 2.6, y: 6.2),
+            control2: CGPoint(x: 4.3, y: 12.1)
         )
-        path.addQuadCurve(
-            to: CGPoint(x: center.x, y: center.y - radius.height),
-            control: CGPoint(x: center.x + control.width, y: center.y - control.height)
+        path.addCurve(
+            to: CGPoint(x: 12.5, y: 1.9),
+            control1: CGPoint(x: 9.7, y: 12.1),
+            control2: CGPoint(x: 11.4, y: 6.2)
         )
+
+        // Rounded right foot.
         path.addQuadCurve(
-            to: CGPoint(x: center.x - radius.width, y: center.y),
-            control: CGPoint(x: center.x - control.width, y: center.y - control.height)
+            to: CGPoint(x: 10.6, y: 1.9),
+            control: CGPoint(x: 11.8, y: 0.5)
         )
+
+        // Inner edge, right leg up into the valley and back down the left leg.
+        path.addCurve(
+            to: CGPoint(x: 7.0, y: 5.9),
+            control1: CGPoint(x: 10.0, y: 4.0),
+            control2: CGPoint(x: 8.7, y: 5.9)
+        )
+        path.addCurve(
+            to: CGPoint(x: 3.4, y: 1.9),
+            control1: CGPoint(x: 5.3, y: 5.9),
+            control2: CGPoint(x: 4.0, y: 4.0)
+        )
+
+        // Rounded left foot.
         path.addQuadCurve(
-            to: CGPoint(x: center.x, y: center.y + radius.height),
-            control: CGPoint(x: center.x - control.width, y: center.y + control.height)
+            to: CGPoint(x: 1.5, y: 1.9),
+            control: CGPoint(x: 2.2, y: 0.5)
         )
         path.closeSubpath()
 
-        context.addPath(path)
         context.setFillColor(NSColor.black.cgColor)
+        context.addPath(path)
         context.fillPath()
     }
 
+    /// OpenAI's mark, which Codex ships under: a six-fold knot of thin interlocking strands.
     static let codex = template(width: 13, height: 13) { context in
         let center = CGPoint(x: 6.5, y: 6.5)
-        let radius: CGFloat = 5.2
+        let radius: CGFloat = 5.3
 
         context.setStrokeColor(NSColor.black.cgColor)
-        context.setLineWidth(1.3)
+        context.setLineWidth(0.95)
         context.setLineCap(.round)
+        context.setLineJoin(.round)
 
-        for spoke in 0..<6 {
-            let angle = CGFloat(spoke) * .pi / 3.0
+        func point(_ angle: CGFloat, _ scale: CGFloat) -> CGPoint {
+            CGPoint(x: center.x + radius * scale * cos(angle), y: center.y + radius * scale * sin(angle))
+        }
+
+        // Six petals leave the core, round off at the rim, and return: the blossom shape that
+        // reads correctly even at menu bar size.
+        for strand in 0..<6 {
+            let angle = CGFloat(strand) * .pi / 3.0
             let path = CGMutablePath()
-            path.move(to: CGPoint(
-                x: center.x + radius * 0.35 * cos(angle),
-                y: center.y + radius * 0.35 * sin(angle)
-            ))
-            path.addQuadCurve(
-                to: CGPoint(
-                    x: center.x + radius * 0.85 * cos(angle + 1.25),
-                    y: center.y + radius * 0.85 * sin(angle + 1.25)
-                ),
-                control: CGPoint(
-                    x: center.x + radius * cos(angle + 0.6),
-                    y: center.y + radius * sin(angle + 0.6)
-                )
+            path.move(to: point(angle - 0.30, 0.22))
+            path.addCurve(
+                to: point(angle, 0.98),
+                control1: point(angle - 0.62, 0.72),
+                control2: point(angle - 0.40, 1.02)
+            )
+            path.addCurve(
+                to: point(angle + 0.30, 0.22),
+                control1: point(angle + 0.40, 1.02),
+                control2: point(angle + 0.62, 0.72)
             )
             context.addPath(path)
             context.strokePath()

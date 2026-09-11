@@ -35,20 +35,35 @@ enum ProcessInspector {
     /// Finds the Antigravity language server process by matching executable or arguments.
     static func findLanguageServer() -> Match? {
         for pid in currentPIDs() {
-            guard let path = executablePath(of: pid) else { continue }
-            let isCandidate = path.contains("Antigravity")
-                || path.contains("language_server")
-                || path.contains("language_server_macos_arm64")
-            guard isCandidate, let arguments = arguments(of: pid) else { continue }
-            let fullCommand = arguments.joined(separator: " ")
-            if fullCommand.contains("language_server") || fullCommand.contains("language_server_macos_arm64") {
-                return Match(pid: pid, arguments: arguments)
-            }
-            if path.contains("Antigravity") && fullCommand.contains("csrf_token") {
-                return Match(pid: pid, arguments: arguments)
-            }
+            if let match = languageServerMatch(pid: pid) { return match }
         }
         return nil
+    }
+
+    /// Re-validates a previously located process without walking the whole PID table again.
+    static func languageServerMatch(pid: pid_t) -> Match? {
+        guard let path = executablePath(of: pid) else { return nil }
+        let isCandidate = path.contains("Antigravity")
+            || path.contains("language_server")
+            || path.contains("language_server_macos_arm64")
+        guard isCandidate, let arguments = arguments(of: pid) else { return nil }
+
+        let fullCommand = arguments.joined(separator: " ")
+        if fullCommand.contains("language_server") || fullCommand.contains("language_server_macos_arm64") {
+            return Match(pid: pid, arguments: arguments)
+        }
+        if path.contains("Antigravity") && fullCommand.contains("csrf_token") {
+            return Match(pid: pid, arguments: arguments)
+        }
+        return nil
+    }
+
+    /// Re-validates a process located by path fragments, same purpose as `languageServerMatch`.
+    static func match(pid: pid_t, pathFragments: [String]) -> Match? {
+        guard let path = executablePath(of: pid),
+              pathFragments.allSatisfy({ path.contains($0) }),
+              let arguments = arguments(of: pid) else { return nil }
+        return Match(pid: pid, arguments: arguments)
     }
 
     private static func executablePath(of pid: pid_t) -> String? {

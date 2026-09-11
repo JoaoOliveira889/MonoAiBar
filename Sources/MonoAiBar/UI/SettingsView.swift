@@ -131,7 +131,7 @@ struct SettingsView: View {
             settings.toggleProvider(provider)
         } label: {
             HStack(spacing: 6) {
-                Image(nsImage: provider.brandIcon)
+                BrandIcon(provider: provider, size: 13, tinted: isEnabled)
 
                 Text(provider.shortCode.uppercased())
                     .font(.system(size: 9.5, weight: .bold, design: .monospaced))

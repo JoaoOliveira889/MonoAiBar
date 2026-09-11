@@ -35,11 +35,17 @@ No external Swift dependencies. `Sources/MonoAiBar/` is layered:
   - `ProcessInspector.swift` — `libproc` / `sysctl` process and socket inspection
   - `HTTPClient.swift` — the one shared ephemeral `URLSession` shape
   - `SettingsStore.swift`, `NotificationService.swift`, `Log.swift`
-- `UI/` — `MenuBarLabelView` and `MenuBarRenderer` for the status item, `PopoverContentView` +
-  `ProviderQuotaCard` + `MiniProgressBar` for the dropdown, `SettingsView`, `OfficialBrandIcons`.
+- `UI/` — `StatusItemController` owns the status item and the popover's open/close state machine,
+  `MenuBarRenderer` rasterises the status item image, `PopoverContentView` + `ProviderQuotaCard` +
+  `MiniProgressBar` render the dropdown, plus `SettingsView`, `OfficialBrandIcons`, and `BrandIcon`
+  (the one SwiftUI wrapper for a provider glyph).
 
 Adding a provider means a new actor in `Services/` returning `ProviderStatus`, a case in
 `ProviderType`, a branch in `QuotaManager.fetch(_:)`, and an icon in `OfficialBrandIcons.swift`.
+
+Brand glyphs are hand-drawn Core Graphics templates that trace the vendors' official marks (the
+Claude burst, the Antigravity arch, the OpenAI blossom). They are templates so the menu bar can
+invert them and SwiftUI can tint them — never swap one for a bitmap or a coloured asset.
 
 **Only add a provider whose real usage figures can actually be read.** A provider with
 no readable telemetry belongs in neither the enum nor the README. Never present mock or placeholder

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JoaoOliveira889/MonoAiBar/releases"><img src="https://img.shields.io/badge/version-v0.0.1-blueviolet?style=for-the-badge" alt="Version 0.0.1"></a>
+  <a href="https://github.com/JoaoOliveira889/MonoAiBar/releases"><img src="https://img.shields.io/badge/version-v0.0.2-blueviolet?style=for-the-badge" alt="Version 0.0.2"></a>
   <a href="https://github.com/JoaoOliveira889/MonoAiBar"><img src="https://img.shields.io/badge/platform-macOS%2026.0%2B-blue?style=for-the-badge&logo=apple" alt="macOS 26.0+"></a>
   <a href="https://github.com/JoaoOliveira889/MonoAiBar"><img src="https://img.shields.io/badge/architecture-Apple%20Silicon%20(ARM64)-indigo?style=for-the-badge&logo=apple" alt="Apple Silicon ARM64 Only"></a>
   <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.0%2B-F05138?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 6.0+"></a>
@@ -34,7 +34,7 @@
 
 <img src="img/1.png" alt="Menu Bar Display" width="190" />
 
-*Pixel-perfect brand marks (Clawd crab &amp; Gemini star) with live percentages and adaptive macOS dark/light template rendering.*
+*Pixel-perfect official brand marks with live percentages and adaptive macOS dark/light template rendering.*
 
 <br>
 
@@ -77,12 +77,12 @@
   1. **Stacked Text (Default):** Provider code on top, quota percentage below (`CLD 14%`, `AGY 7%`), matching native macOS system monitors.
   2. **Single Line:** Streamlined horizontal layout (`cld 14%  agy 7%`).
   3. **Icons:** Hand-crafted vector brand marks positioned pixel-perfect above the percentages.
-* 👾 **Hand-Crafted Brand Icons:**
-  - **Claude:** The **Clawd** pixel-art crab mascot from the Claude Code CLI.
-  - **Antigravity:** Google Gemini 4-pointed sparkle star with smooth concave curves.
-  - **Codex:** OpenAI 6-segment looping vortex knot.
+* 👾 **Hand-Crafted Official Brand Marks:**
+  - **Claude:** Anthropic Claude 12-ray radial burst.
+  - **Antigravity:** Google Antigravity tapered arch mark.
+  - **Codex:** OpenAI 6-segment blossom knot.
 
-  Each one is drawn through `NSImage(size:flipped:drawingHandler:)`, so it re-rasterises for whatever display it lands on instead of being baked at one scale.
+  Each one is drawn through `NSImage(size:flipped:drawingHandler:)` as an adaptive template, re-rasterising crisply for Retina displays and automatically inverting for light/dark menu bar modes.
 * 🛡️ **100% Private with Zero Telemetry:**
   No external tracking, no analytics, no cookies, no intermediary servers. Credentials never leave your machine.
 * 🪶 **Native Swift 6 & SwiftUI (Apple Silicon Exclusive):**
